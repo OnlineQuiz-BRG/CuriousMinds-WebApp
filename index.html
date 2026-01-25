@@ -16,9 +16,11 @@
       .font-poppins {
         font-family: 'Poppins', sans-serif;
       }
+      /* CRITICAL FIX: Letter spacing must be normal for Telugu ligatures to render on mobile */
       .font-telugu {
-        font-family: 'Noto Sans Telugu', sans-serif;
+        font-family: 'Noto Sans Telugu', 'Inter', sans-serif !important;
         letter-spacing: normal !important;
+        word-spacing: normal !important;
         line-height: 1.6;
       }
       .dictation-feed::-webkit-scrollbar {

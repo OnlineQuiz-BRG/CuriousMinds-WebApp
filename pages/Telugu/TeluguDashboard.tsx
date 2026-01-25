@@ -5,7 +5,7 @@ import { TELUGU_STAGES } from '../../constants';
 import { 
   BookOpen, Compass, PenTool, Award, Crown, CheckCircle2,
   ChevronLeft, Sprout, TrendingUp, Sparkles, Loader2, ChevronRight,
-  Target, Play, Settings2
+  Target, Play, Settings2, RefreshCw
 } from 'lucide-react';
 import { mockDb } from '../../services/mockDb';
 import { useAuth } from '../../App';
@@ -23,11 +23,11 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
   const [customGapValue, setCustomGapValue] = useState('15');
   const [stageCounts, setStageCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const categories = ['Foundation', 'Progressive', 'Advanced', 'Achiever', 'Expert', 'Mastery'];
   const results = mockDb.getResults(user?.id);
 
-  // Filter stages based on admin configuration (Admins see all)
   const visibleStages = useMemo(() => {
     if (user?.role === UserRole.ADMIN || user?.role === UserRole.TEACHER) return TELUGU_STAGES;
     const enabledIds = config.enabledTeluguStages || TELUGU_STAGES.map(s => s.id);
@@ -39,29 +39,41 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
     return categories.filter(c => cats.has(c as any));
   }, [visibleStages, categories]);
 
-  useEffect(() => {
-    const loadLocalCounts = async () => {
-      try {
-        const counts: Record<string, number> = {};
-        const results = await Promise.all(
-          TELUGU_STAGES.map(async (stage) => {
-            const qs = await mockDb.getQuestions(stage.id);
-            // Count unique testIds for this stage
-            const uniqueSets = new Set(qs.map(q => q.testId)).size;
-            return { id: stage.id.toLowerCase(), count: uniqueSets };
-          })
-        );
-        results.forEach(res => counts[res.id] = res.count);
-        setStageCounts(counts);
-      } catch (err) {
-        console.error("Local count read failed:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadLocalCounts = async () => {
+    setIsLoading(true);
+    try {
+      const counts: Record<string, number> = {};
+      const results = await Promise.all(
+        TELUGU_STAGES.map(async (stage) => {
+          const qs = await mockDb.getQuestions(stage.id);
+          const uniqueSets = new Set(qs.map(q => q.testId)).size;
+          return { id: stage.id.toLowerCase(), count: uniqueSets };
+        })
+      );
+      results.forEach(res => counts[res.id] = res.count);
+      setStageCounts(counts);
+    } catch (err) {
+      console.error("Local count read failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadLocalCounts();
   }, [user?.id, location.pathname, selectedStage]);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await mockDb.syncFromSupabase(true);
+      await loadLocalCounts();
+    } catch (e) {
+      console.error("Sync failed:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const getCategoryTheme = (category: string) => {
     switch (category) {
@@ -90,6 +102,7 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
     const limit = config.teluguLimits[selectedStage] || 50;
     const { completedCount, totalPossible } = getStageStats(selectedStage);
     const progress = totalPossible > 0 ? Math.round((completedCount / totalPossible) * 100) : 0;
+    const countInBank = stageCounts[selectedStage.toLowerCase()] || 0;
     
     return (
       <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 pb-20">
@@ -120,47 +133,60 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <div className="bg-slate-100/50 p-2 rounded-[32px] inline-flex gap-2">
-            {['10s', '8s', '6s', '4s'].map(gap => (
-              <button
-                key={gap}
-                onClick={() => {
-                  setIsCustomGap(false);
-                  setSelectedGap(gap);
-                }}
-                className={`px-10 py-4 rounded-[24px] font-black transition-all ${selectedGap === gap && !isCustomGap ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:bg-white'}`}
-              >
-                {gap}
-              </button>
-            ))}
-            <button 
-              onClick={() => setIsCustomGap(true)}
-              className={`px-10 py-4 rounded-[24px] font-black transition-all ${isCustomGap ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:bg-white'}`}
-            >
-              <Settings2 className="w-4 h-4 inline mr-1" /> Custom
-            </button>
-          </div>
-          
-          {isCustomGap && (
-            <div className="animate-in slide-in-from-left-2 flex items-center gap-3">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Gap Duration:</span>
-              <div className="relative">
-                <input 
-                  type="number"
-                  min="1"
-                  max="300"
-                  value={customGapValue}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomGapValue(val);
-                    setSelectedGap(val + 's');
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="bg-slate-100/50 p-2 rounded-[32px] inline-flex gap-2">
+              {['10s', '8s', '6s', '4s'].map(gap => (
+                <button
+                  key={gap}
+                  onClick={() => {
+                    setIsCustomGap(false);
+                    setSelectedGap(gap);
                   }}
-                  className="w-24 px-4 py-3 bg-white border-2 border-indigo-100 rounded-xl font-black text-lg text-indigo-600 focus:outline-none focus:border-indigo-500 shadow-sm"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-300 pointer-events-none">SEC</span>
-              </div>
+                  className={`px-10 py-4 rounded-[24px] font-black transition-all ${selectedGap === gap && !isCustomGap ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:bg-white'}`}
+                >
+                  {gap}
+                </button>
+              ))}
+              <button 
+                onClick={() => setIsCustomGap(true)}
+                className={`px-10 py-4 rounded-[24px] font-black transition-all ${isCustomGap ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:bg-white'}`}
+              >
+                <Settings2 className="w-4 h-4 inline mr-1" /> Custom
+              </button>
             </div>
+            
+            {isCustomGap && (
+              <div className="animate-in slide-in-from-left-2 flex items-center gap-3">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Gap Duration:</span>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={customGapValue}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomGapValue(val);
+                      setSelectedGap(val + 's');
+                    }}
+                    className="w-24 px-4 py-3 bg-white border-2 border-indigo-100 rounded-xl font-black text-lg text-indigo-600 focus:outline-none focus:border-indigo-500 shadow-sm"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-slate-300 pointer-events-none">SEC</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {countInBank === 0 && !isLoading && (
+            <button 
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-100 transition-all animate-pulse"
+            >
+              {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {isSyncing ? 'Syncing...' : 'Sync Missing Sets'}
+            </button>
           )}
         </div>
 
@@ -169,13 +195,17 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
             const testNum = (i + 1).toString();
             const res = results.find(r => r.level === selectedStage && r.testId === testNum && r.speedGap === selectedGap);
             const isMastered = res && res.scorePercentage >= 90;
+            const inBank = parseInt(testNum) <= countInBank;
             
             return (
               <button
                 key={testNum}
+                disabled={!inBank}
                 onClick={() => navigate(`/telugu/test/${selectedStage}/${testNum}?gap=${selectedGap}`)}
                 className={`group relative h-20 rounded-[28px] font-black text-xl border-2 transition-all flex items-center justify-center shadow-sm ${
-                  isMastered 
+                  !inBank 
+                  ? 'bg-slate-50 border-slate-100 text-slate-200 cursor-not-allowed'
+                  : isMastered 
                   ? 'bg-emerald-50 border-emerald-400 text-emerald-700 shadow-emerald-100' 
                   : res 
                   ? 'bg-rose-50 border-rose-300 text-rose-700'
@@ -184,9 +214,11 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
               >
                 {testNum}
                 {isMastered && <CheckCircle2 className="absolute top-1 right-1 w-4 h-4 text-emerald-500" />}
-                <div className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-[28px]">
-                   <Play className="w-6 h-6 fill-current" />
-                </div>
+                {inBank && (
+                  <div className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-[28px]">
+                     <Play className="w-6 h-6 fill-current" />
+                  </div>
+                )}
               </button>
             );
           })}
@@ -204,6 +236,13 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
         </div>
         
         <div className="flex gap-4">
+          <button 
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            className="flex items-center gap-3 px-8 py-5 bg-white border border-slate-200 text-indigo-400 font-black rounded-3xl hover:bg-slate-50 shadow-sm transition-all active:scale-95"
+          >
+             <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Syncing...' : 'Sync Registry'}
+          </button>
           <Link to="/telugu/analytics" className="flex items-center gap-3 px-8 py-5 bg-white border border-slate-200 text-indigo-600 font-black rounded-3xl hover:bg-slate-50 shadow-sm transition-all active:scale-95">
              <TrendingUp className="w-5 h-5" /> Analytics Matrix
           </Link>
@@ -214,9 +253,10 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
       </header>
 
       {isLoading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
           <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
           <p className="font-black uppercase tracking-widest text-xs text-slate-400">Restoring Master Bank...</p>
+          <p className="text-[10px] text-slate-300 max-w-xs">Connecting to secure storage. This ensures all word combinations are visible on this device.</p>
         </div>
       )}
 
@@ -238,6 +278,7 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
                     const { completedCount, totalPossible } = getStageStats(stage.id);
                     const CategoryIcon = theme.icon;
                     const progress = totalPossible > 0 ? Math.round((completedCount / totalPossible) * 100) : 0;
+                    const count = stageCounts[stage.id.toLowerCase()] || 0;
                     
                     return (
                       <div key={stage.id} onClick={() => setSelectedStage(stage.id)} className={`${theme.bg} ${theme.border} p-10 rounded-[56px] border-2 shadow-sm hover:shadow-2xl transition-all group flex flex-col hover:-translate-y-2 relative overflow-hidden cursor-pointer`}>
@@ -246,8 +287,8 @@ function TeluguMainView({ config }: { config: SystemConfig }) {
                             <CategoryIcon className="w-10 h-10" />
                           </div>
                           <div className="text-right">
-                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Available Sets</p>
-                             <span className="font-black text-slate-800">{stageCounts[stage.id.toLowerCase()] || 0} / 50</span>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">In Bank</p>
+                             <span className={`font-black ${count > 0 ? 'text-indigo-600' : 'text-slate-300'}`}>{count} / 50</span>
                           </div>
                         </div>
                         

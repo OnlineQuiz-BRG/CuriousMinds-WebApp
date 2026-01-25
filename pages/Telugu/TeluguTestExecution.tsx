@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ChevronLeft, CheckCircle, User as UserIcon, Play, RefreshCw, Send, Sparkles, 
   AlertCircle, Clock, Volume2, Pause, SkipForward,
-  Check, X as XIcon, Minus, Timer
+  Check, X as XIcon, Minus, Timer, Loader2
 } from 'lucide-react';
 import { mockDb } from '../../services/mockDb';
 import { useAuth } from '../../App';
@@ -23,6 +23,7 @@ export default function TeluguTestExecution() {
   const stage = TELUGU_STAGES.find(s => s.id === stageId);
 
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(-1); 
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [isAutoRunning, setIsAutoRunning] = useState(false);
@@ -35,11 +36,18 @@ export default function TeluguTestExecution() {
   useEffect(() => {
     const loadQuestions = async () => {
       if (!stageId || !testId) return;
-      const allQs = await mockDb.getQuestions(stageId);
-      const loaded = allQs.filter(q => 
-        q.testId === testId
-      ).sort((a, b) => a.questionNum - b.questionNum);
-      setQuestions(loaded);
+      setIsLoading(true);
+      try {
+        const allQs = await mockDb.getQuestions(stageId);
+        const loaded = allQs.filter(q => 
+          q.testId === testId
+        ).sort((a, b) => a.questionNum - b.questionNum);
+        setQuestions(loaded);
+      } catch (e) {
+        console.error("Failed to load questions:", e);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadQuestions();
   }, [stageId, testId]);
@@ -150,6 +158,18 @@ export default function TeluguTestExecution() {
     navigate('/telugu');
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-6 text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
+        <div>
+          <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Connecting to Word Bank</h3>
+          <p className="text-slate-400 font-bold mt-2">Retrieving combination words for Set {testId}...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!stage) return <div className="p-20 text-center font-black text-rose-500 uppercase tracking-widest">Assessment Not Found</div>;
 
   const activeWords = [...questions.slice(0, currentIndex + 1)].reverse();
@@ -206,9 +226,10 @@ export default function TeluguTestExecution() {
 
                <button 
                  onClick={startSession}
-                 className="group relative flex items-center gap-4 px-16 py-8 bg-indigo-600 text-white rounded-[40px] font-black text-2xl shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                 disabled={questions.length === 0}
+                 className="group relative flex items-center gap-4 px-16 py-8 bg-indigo-600 text-white rounded-[40px] font-black text-2xl shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest disabled:opacity-50"
                >
-                 <Play className="w-8 h-8 fill-current" /> Start Dictation
+                 <Play className="w-8 h-8 fill-current" /> {questions.length === 0 ? 'Wait, Loading Data...' : 'Start Dictation'}
                </button>
             </div>
           ) : (
@@ -227,7 +248,7 @@ export default function TeluguTestExecution() {
                             {q.questionNum}
                           </div>
                           <div className="space-y-2 text-center md:text-left">
-                            <p className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter leading-tight font-telugu">
+                            <p className="text-2xl md:text-3xl font-black text-slate-800 leading-tight font-telugu">
                               {q.text}
                             </p>
                             <span className="inline-flex px-4 py-1 bg-slate-100 text-slate-400 rounded-full text-[9px] font-black uppercase tracking-widest">

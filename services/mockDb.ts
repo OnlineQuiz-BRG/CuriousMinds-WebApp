@@ -1,7 +1,7 @@
 
 import { User, UserRole, TestResult, Question, SystemConfig, Resource } from '../types';
 import { DEFAULT_BRANDING, MATH_LEVELS, TELUGU_STAGES } from '../constants';
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { db, MasterWord } from './db';
 
 const STORAGE_KEYS = {
@@ -88,27 +88,28 @@ export const mockDb = {
     users.push(cleanUser);
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
 
-    try {
-      const dbPayload = {
-        id: cleanUser.id,
-        username: cleanUser.username,
-        role: cleanUser.role,
-        fullName: cleanUser.fullName,
-        email: cleanUser.email || null,
-        password: cleanUser.password || null,
-        active: cleanUser.active,
-        allowed_modules: cleanUser.allowedModules,
-        institute: cleanUser.institute || null,
-        school: cleanUser.school || null,
-        assigned_teacher_id: cleanUser.assignedTeacherId || null,
-        // Fix: Changed teacher_notes property access to match User interface (teacherNotes)
-        teacher_notes: cleanUser.teacherNotes || null,
-        avatar_url: cleanUser.avatarUrl || null
-      };
-      
-      await supabase.from('users').upsert(dbPayload);
-    } catch (e) {
-      console.error("Cloud User Sync Failure:", e);
+    if (isSupabaseConfigured) {
+      try {
+        const dbPayload = {
+          id: cleanUser.id,
+          username: cleanUser.username,
+          role: cleanUser.role,
+          fullName: cleanUser.fullName,
+          email: cleanUser.email || null,
+          password: cleanUser.password || null,
+          active: cleanUser.active,
+          allowed_modules: cleanUser.allowedModules,
+          institute: cleanUser.institute || null,
+          school: cleanUser.school || null,
+          assigned_teacher_id: cleanUser.assignedTeacherId || null,
+          teacher_notes: cleanUser.teacherNotes || null,
+          avatar_url: cleanUser.avatarUrl || null
+        };
+        
+        await supabase.from('users').upsert(dbPayload);
+      } catch (e) {
+        console.error("Cloud User Sync Failure:", e);
+      }
     }
   },
 
@@ -143,10 +144,12 @@ export const mockDb = {
     results.push(result);
     localStorage.setItem(STORAGE_KEYS.RESULTS, JSON.stringify(results));
 
-    try {
-      await supabase.from('test_results').insert(result);
-    } catch (e) {
-      console.error("Supabase Result Sync Failed:", e);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('test_results').insert(result);
+      } catch (e) {
+        console.error("Supabase Result Sync Failed:", e);
+      }
     }
 
     const config = mockDb.getConfig();
@@ -177,18 +180,43 @@ export const mockDb = {
   },
 
   getQuestions: async (levelId?: string): Promise<Question[]> => {
-    if (levelId) return await db.getQuestionsByLevel(levelId);
-    return await db.getAllQuestions();
+    let localQs: Question[] = [];
+    if (levelId) {
+      localQs = await db.getQuestionsByLevel(levelId.toLowerCase());
+    } else {
+      localQs = await db.getAllQuestions();
+    }
+
+    // CRITICAL: If local DB is empty but we have Supabase, fetch and cache on the fly
+    if (localQs.length === 0 && levelId && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('questions')
+          .select('*')
+          .eq('level', levelId.toLowerCase());
+        
+        if (!error && data && data.length > 0) {
+          await db.saveQuestions(data);
+          return data;
+        }
+      } catch (e) {
+        console.error("Direct cloud fetch failed:", e);
+      }
+    }
+
+    return localQs;
   },
 
   saveQuestions: async (newQuestions: Question[]) => {
     if (newQuestions.length === 0) return;
     try {
       await db.saveQuestions(newQuestions);
-      const BATCH_SIZE = 1000;
-      for (let i = 0; i < newQuestions.length; i += BATCH_SIZE) {
-        const batch = newQuestions.slice(i, i + BATCH_SIZE);
-        await supabase.from('questions').upsert(batch);
+      if (isSupabaseConfigured) {
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < newQuestions.length; i += BATCH_SIZE) {
+          const batch = newQuestions.slice(i, i + BATCH_SIZE);
+          await supabase.from('questions').upsert(batch);
+        }
       }
     } catch (e) {
       console.error("Supabase Question Sync Failed:", e);
@@ -214,7 +242,6 @@ export const mockDb = {
         id: `${stageId}-${(idx + 1).toString().padStart(3, '0')}`,
         stage: stageId,
         telugu: w.text,
-        // Mapping from Google Apps Script 'definition' and 'context'
         english: w.definition || w.english || '', 
         hindi: w.context || w.hindi || '' 
       }));
@@ -226,13 +253,15 @@ export const mockDb = {
 
     await db.saveMasterWords(allMasterWords);
     
-    try {
-      const BATCH = 500;
-      for (let i = 0; i < allMasterWords.length; i += BATCH) {
-        await supabase.from('master_words').upsert(allMasterWords.slice(i, i + BATCH));
+    if (isSupabaseConfigured) {
+      try {
+        const BATCH = 500;
+        for (let i = 0; i < allMasterWords.length; i += BATCH) {
+          await supabase.from('master_words').upsert(allMasterWords.slice(i, i + BATCH));
+        }
+      } catch (e) {
+        console.error("Supabase Master Backup Failed:", e);
       }
-    } catch (e) {
-      console.error("Supabase Master Backup Failed:", e);
     }
 
     return allMasterWords.length;
@@ -294,7 +323,6 @@ export const mockDb = {
       id: `${stageId.toLowerCase()}-${(idx + 1).toString().padStart(3, '0')}`,
       stage: stageId.toLowerCase(),
       telugu: w.text,
-      // Mapping from Google Apps Script 'definition' and 'context'
       english: w.definition || w.english || '',
       hindi: w.context || w.hindi || ''
     }));
@@ -306,10 +334,12 @@ export const mockDb = {
   clearQuestionsByLevel: async (levelId: string) => {
     const lowerLevelId = levelId.toLowerCase();
     await db.clearLevel(lowerLevelId);
-    try {
-      await supabase.from('questions').delete().eq('level', lowerLevelId);
-    } catch (e) {
-      console.error("Supabase clear error:", e);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('questions').delete().eq('level', lowerLevelId);
+      } catch (e) {
+        console.error("Supabase clear error:", e);
+      }
     }
   },
 
@@ -332,19 +362,20 @@ export const mockDb = {
 
   updateConfig: (config: SystemConfig): boolean => {
     localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
-    supabase.from('system_config').upsert({ id: 'global', ...config }).then();
+    if (isSupabaseConfigured) {
+      supabase.from('system_config').upsert({ id: 'global', ...config }).then();
+    }
     return true;
   },
 
   syncFromSupabase: async (force = false) => {
-    if (isSyncingInternal) return;
+    if (isSyncingInternal || !isSupabaseConfigured) return;
 
     const lastSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
-    const oneDay = 24 * 60 * 60 * 1000;
+    const debounceTime = 30 * 60 * 1000; // 30 minutes
     
-    if (!force && lastSync && (Date.now() - new Date(lastSync).getTime() < oneDay)) {
-      const localCount = (await db.getAllQuestions()).length;
-      if (localCount > 100) return;
+    if (!force && lastSync && (Date.now() - new Date(lastSync).getTime() < debounceTime)) {
+      return;
     }
 
     isSyncingInternal = true;
@@ -354,42 +385,44 @@ export const mockDb = {
         ...TELUGU_STAGES.map(s => s.id.toLowerCase())
       ];
 
+      // Sequential sync for reliability on mobile
       for (const levelId of allLevels) {
-        let allData: any[] = [];
-        let from = 0, to = 999, hasMore = true;
+        let from = 0;
+        let hasMore = true;
         
         while (hasMore) {
           const { data, error } = await supabase
             .from('questions')
             .select('*')
             .eq('level', levelId)
-            .range(from, to);
+            .range(from, from + 999);
             
-          if (error) throw error;
+          if (error) break;
           
           if (data && data.length > 0) {
-            allData = [...allData, ...data];
+            await db.saveQuestions(data);
             if (data.length < 1000) hasMore = false;
-            else { from += 1000; to += 1000; }
-          } else hasMore = false;
-        }
-        
-        if (allData.length > 0) {
-          await db.saveQuestions(allData);
+            else from += 1000;
+          } else {
+            hasMore = false;
+          }
         }
       }
       localStorage.setItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
     } catch (e) {
-      console.warn("Offline Sync Note: Using local cache only.", e);
+      console.warn("Cloud Sync interrupted:", e);
     } finally {
       isSyncingInternal = false;
     }
   },
 
   init: async () => {
-    const allQs = await db.getAllQuestions();
-    if (allQs.length === 0) {
-      await mockDb.syncFromSupabase(true);
+    // Basic init, don't block. Sub-pages will call specific syncs if needed.
+    if (isSupabaseConfigured) {
+      const allQs = await db.getAllQuestions();
+      if (allQs.length === 0) {
+        await mockDb.syncFromSupabase(true);
+      }
     }
   }
 };
