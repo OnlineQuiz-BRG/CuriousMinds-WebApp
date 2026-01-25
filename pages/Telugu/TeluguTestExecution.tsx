@@ -30,7 +30,6 @@ export default function TeluguTestExecution() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // New state for the inter-word countdown
   const [timeLeftInGap, setTimeLeftInGap] = useState(gapSeconds);
 
   useEffect(() => {
@@ -66,19 +65,16 @@ export default function TeluguTestExecution() {
     window.speechSynthesis.speak(msg);
   }, []);
 
-  // Refactored Cycle Management: Tick every 1 second for the visual timer
   useEffect(() => {
     let interval: any;
     if (isAutoRunning && currentIndex >= 0 && currentIndex < questions.length) {
       interval = setInterval(() => {
         setTimeLeftInGap((prev) => {
           if (prev <= 1) {
-            // Timer hit zero
             if (currentIndex < questions.length - 1) {
               setCurrentIndex((idx) => idx + 1);
-              return gapSeconds; // Reset timer for next word
+              return gapSeconds; 
             } else {
-              // Last word finished
               setIsAutoRunning(false);
               handleSessionCompletion();
               return 0;
@@ -91,7 +87,6 @@ export default function TeluguTestExecution() {
     return () => clearInterval(interval);
   }, [isAutoRunning, currentIndex, questions.length, gapSeconds]);
 
-  // Handle Voice trigger exactly when index changes
   useEffect(() => {
     if (currentIndex >= 0 && currentIndex < questions.length) {
       speakWord(questions[currentIndex].answer, questions[currentIndex].questionNum);
@@ -162,8 +157,7 @@ export default function TeluguTestExecution() {
   return (
     <div className="relative max-w-6xl mx-auto pb-40 min-h-[90vh] flex flex-col">
       
-      {/* Global Header */}
-      <div className="fixed top-0 left-0 right-0 z-[100] md:left-64 bg-white/95 backdrop-blur-2xl border-b border-slate-200 shadow-lg px-6 md:px-12 py-6 flex items-center justify-between">
+      <div className="fixed top-0 left-0 right-0 z-[100] md:left-64 bg-white border-b border-slate-200 shadow-lg px-6 md:px-12 py-6 flex items-center justify-between">
          <div className="flex items-center gap-4 md:gap-6">
             <div className="w-10 h-10 md:w-14 md:h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-inner shrink-0">
                <UserIcon className="w-5 h-5 md:w-6 md:h-6" />
@@ -219,7 +213,6 @@ export default function TeluguTestExecution() {
             </div>
           ) : (
             <div className="flex-1 flex flex-col space-y-10 animate-in fade-in duration-500">
-              {/* Dictation feed with latest at top */}
               <div className="flex-1 max-h-[65vh] overflow-y-auto space-y-6 px-4 py-6 dictation-feed">
                 {activeWords.map((q, idx) => {
                   const isLatest = idx === 0;
@@ -234,7 +227,7 @@ export default function TeluguTestExecution() {
                             {q.questionNum}
                           </div>
                           <div className="space-y-2 text-center md:text-left">
-                            <p className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter">
+                            <p className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter leading-tight font-telugu">
                               {q.text}
                             </p>
                             <span className="inline-flex px-4 py-1 bg-slate-100 text-slate-400 rounded-full text-[9px] font-black uppercase tracking-widest">
@@ -245,7 +238,6 @@ export default function TeluguTestExecution() {
                         
                         {isLatest && (
                           <div className="flex items-center gap-6">
-                             {/* Individual Word Timer Display */}
                              <div className="flex flex-col items-center gap-2">
                                 <div className="relative w-16 h-16 flex items-center justify-center">
                                    <svg className="absolute inset-0 w-full h-full -rotate-90">
@@ -287,12 +279,11 @@ export default function TeluguTestExecution() {
                 })}
               </div>
 
-              {/* Progress Footer */}
               <div className="bg-white p-8 rounded-[48px] border border-slate-200 shadow-2xl">
                  <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex-1 w-full space-y-4">
                        <div className="flex justify-between items-end px-2">
-                          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                          <h4 className="text-xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
                              <Timer className="w-5 h-5 text-indigo-600" />
                              Next Word In: <span className={timeLeftInGap <= 2 ? "text-amber-600" : "text-indigo-600"}>{timeLeftInGap}s</span>
                           </h4>
@@ -342,10 +333,9 @@ export default function TeluguTestExecution() {
             </div>
           )
         ) : (
-          /* VALIDATION VIEW */
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-10 duration-700">
-            <div className="text-center space-y-4">
-               <h2 className="text-4xl font-black text-slate-800 tracking-tighter uppercase leading-none">Correction Registry</h2>
+            <div className="text-center space-y-4 px-4">
+               <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tighter uppercase leading-none">Correction Registry</h2>
                <p className="text-slate-500 font-bold text-lg">Verify your entries against the Master Key for this set.</p>
                
                <div className="inline-flex items-center gap-6 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
@@ -377,12 +367,12 @@ export default function TeluguTestExecution() {
 
                       <div className="col-span-3">
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 md:hidden">Prompt</p>
-                         <p className="font-bold text-slate-800 text-sm leading-snug">{q.text}</p>
+                         <p className="font-bold text-slate-800 text-sm leading-snug font-telugu">{q.text}</p>
                       </div>
 
                       <div className="col-span-5 flex justify-center">
                          <div className="w-full max-w-xs md:max-w-none p-3 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
-                            <span className="text-2xl font-black text-indigo-900">{q.answer}</span>
+                            <span className="text-2xl font-black text-indigo-900 font-telugu">{q.answer}</span>
                          </div>
                       </div>
 
@@ -406,11 +396,11 @@ export default function TeluguTestExecution() {
                </div>
             </div>
 
-            <div className="flex flex-col items-center gap-6 pt-10">
+            <div className="flex flex-col items-center gap-6 pt-10 px-6">
                <button 
                  onClick={saveAssessment}
                  disabled={isSubmitting || Object.keys(wordResults).length < questions.length}
-                 className="px-20 py-6 bg-indigo-600 text-white font-black rounded-3xl shadow-2xl hover:bg-indigo-700 transition-all flex items-center gap-4 active:scale-95 disabled:opacity-50 text-xl uppercase tracking-widest"
+                 className="w-full md:w-auto px-20 py-6 bg-indigo-600 text-white font-black rounded-3xl shadow-2xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50 text-xl uppercase tracking-widest"
                >
                  {isSubmitting ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />} Archive Results
                </button>

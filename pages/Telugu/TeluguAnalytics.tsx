@@ -37,7 +37,6 @@ export default function TeluguAnalytics() {
 
     if (stageResults.length === 0) return null;
 
-    // We assume 40 words as per requirement
     const rows = Array.from({ length: 40 }).map((_, i) => ({
       wordNum: i + 1,
       scores: stageResults.map(r => ({
@@ -76,7 +75,6 @@ export default function TeluguAnalytics() {
         </div>
       </div>
 
-      {/* Control Bar */}
       <div className="bg-white rounded-[40px] border border-slate-200 shadow-sm p-8 flex flex-col md:flex-row gap-6">
         <div className="flex-1 flex gap-4">
           <div className="flex-1 flex items-center gap-3 bg-slate-50 border border-slate-100 px-6 py-4 rounded-2xl shadow-inner">
@@ -121,7 +119,6 @@ export default function TeluguAnalytics() {
         </div>
       </div>
 
-      {/* Matrix Layout */}
       <div className="bg-white rounded-[48px] border-2 border-slate-100 shadow-2xl overflow-hidden min-h-[500px]">
         {matrixData ? (
           <div className="overflow-x-auto">
@@ -158,7 +155,7 @@ export default function TeluguAnalytics() {
                         <td className="px-10 py-6 text-left font-black text-slate-700 border-r border-slate-100 sticky left-0 bg-white group-hover:bg-slate-50 z-20 transition-colors">
                            <div className="flex items-center gap-4">
                               <span className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-black">#{row.wordNum}</span>
-                              <span className="uppercase tracking-tight">Vocabulary Item {row.wordNum}</span>
+                              <span className="uppercase tracking-tight font-telugu">Vocabulary Item {row.wordNum}</span>
                            </div>
                         </td>
                         {row.scores.map((s, idx) => (
