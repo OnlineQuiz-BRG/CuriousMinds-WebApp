@@ -101,6 +101,7 @@ export const mockDb = {
         institute: cleanUser.institute || null,
         school: cleanUser.school || null,
         assigned_teacher_id: cleanUser.assignedTeacherId || null,
+        // Fix: Changed teacher_notes property access to match User interface (teacherNotes)
         teacher_notes: cleanUser.teacherNotes || null,
         avatar_url: cleanUser.avatarUrl || null
       };
@@ -213,8 +214,9 @@ export const mockDb = {
         id: `${stageId}-${(idx + 1).toString().padStart(3, '0')}`,
         stage: stageId,
         telugu: w.text,
-        english: w.english, 
-        hindi: w.hindi 
+        // Mapping from Google Apps Script 'definition' and 'context'
+        english: w.definition || w.english || '', 
+        hindi: w.context || w.hindi || '' 
       }));
 
       allMasterWords = [...allMasterWords, ...stageWords];
@@ -259,13 +261,16 @@ export const mockDb = {
           const randomIndex = Math.floor(Math.random() * block.length);
           const selectedWord = block[randomIndex];
           
+          const englishPrompt = selectedWord.english || 'No Prompt';
+          const hindiPrompt = selectedWord.hindi || '';
+          
           generatedSets.push({
             id: `telugu-${stageId.toLowerCase()}-t${testIdStr}-q${blockIdx + 1}`,
             level: stageId.toLowerCase(),
             testId: testIdStr,
             questionNum: blockIdx + 1,
             subQuestion: '',
-            text: `${selectedWord.english} - ${selectedWord.hindi || ''}`,
+            text: hindiPrompt ? `${englishPrompt} - ${hindiPrompt}` : englishPrompt,
             answer: selectedWord.telugu,
             definition: selectedWord.english,
             context: selectedWord.hindi
@@ -289,8 +294,9 @@ export const mockDb = {
       id: `${stageId.toLowerCase()}-${(idx + 1).toString().padStart(3, '0')}`,
       stage: stageId.toLowerCase(),
       telugu: w.text,
-      english: w.definition,
-      hindi: w.context
+      // Mapping from Google Apps Script 'definition' and 'context'
+      english: w.definition || w.english || '',
+      hindi: w.context || w.hindi || ''
     }));
 
     await db.saveMasterWords(stageWords);
