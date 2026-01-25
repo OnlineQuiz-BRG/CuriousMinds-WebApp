@@ -1,0 +1,8 @@
+{
+  "name": "Curious Minds - Educational Platform - Deploy",
+  "description": "A comprehensive platform for Telugu dictation, Mental Mathematics assessments, and Prompt Engineering courses with role-based access for students, teachers, and admins.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
