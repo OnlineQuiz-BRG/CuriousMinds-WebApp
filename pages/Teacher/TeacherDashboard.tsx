@@ -377,22 +377,22 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* Student Detail Slide-over */}
+      {/* Student Detail Modal (Centered) */}
       {selectedStudent && studentDetailedStats && (
-        <div className="fixed inset-0 z-[200] flex justify-end animate-in fade-in duration-300">
-           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedStudent(null)} />
-           <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 overflow-hidden">
-             <header className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedStudent(null)} />
+           <div className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl flex flex-col animate-in zoom-in-95 duration-500 overflow-hidden max-h-[95vh]">
+             <header className="p-8 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
                 <div className="flex items-center gap-4">
-                   <div className="w-16 h-16 bg-indigo-600 text-white rounded-[24px] flex items-center justify-center text-2xl font-black shadow-xl">
+                   <div className="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-black shadow-xl">
                       {selectedStudent.fullName[0]}
                    </div>
                    <div>
                       <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{selectedStudent.fullName}</h3>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Identity: {selectedStudent.username}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">ID: {selectedStudent.username}</p>
                    </div>
                 </div>
-                <button onClick={() => setSelectedStudent(null)} className="p-3 text-slate-400 hover:bg-white rounded-2xl border border-transparent hover:border-slate-200 transition-all">
+                <button onClick={() => setSelectedStudent(null)} className="p-3 text-slate-400 hover:bg-slate-50 rounded-full transition-all">
                    <X size={24} />
                 </button>
              </header>
@@ -402,7 +402,7 @@ export default function TeacherDashboard() {
                 <section className="space-y-6">
                    <div className="flex items-center justify-between">
                       <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
-                         <MessageSquare size={14} /> Educator's Guidance & Feedback
+                         <MessageSquare size={14} /> Educator's Guidance
                       </h4>
                       {guidanceText !== (selectedStudent.teacherNotes || '') && (
                         <span className="text-[9px] font-black text-amber-500 uppercase animate-pulse">Unsaved Changes</span>
@@ -412,7 +412,7 @@ export default function TeacherDashboard() {
                       <textarea
                         value={guidanceText}
                         onChange={(e) => setGuidanceText(e.target.value)}
-                        placeholder="Provide personalized advice, next steps, or behavioral observations..."
+                        placeholder="Provide personalized advice..."
                         className="w-full h-40 bg-slate-50 border-2 border-slate-100 rounded-[32px] p-8 text-slate-800 font-bold outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner resize-none"
                       />
                       <button 
@@ -420,16 +420,15 @@ export default function TeacherDashboard() {
                         disabled={isSavingGuidance}
                         className="absolute bottom-6 right-6 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center gap-2 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
                       >
-                         {isSavingGuidance ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Archiver Guidance
+                         {isSavingGuidance ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
                       </button>
                    </div>
                 </section>
 
-                {/* Module Mastery Overview */}
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                    <section className="space-y-6">
                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                         <Calculator size={14} /> Math Proficiency
+                         <Calculator size={14} /> Math Status
                       </h4>
                       <div className="grid grid-cols-3 gap-3">
                          {studentDetailedStats.mathMastery.map(lvl => (
@@ -443,26 +442,25 @@ export default function TeacherDashboard() {
 
                    <section className="space-y-6">
                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                         <AlphabetIcon size={14} /> Telugu Proficiency
+                         <AlphabetIcon size={14} /> Telugu Status
                       </h4>
-                      <div className="bg-slate-50 border border-slate-100 rounded-[32px] p-6">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mastered Stages</p>
+                      <div className="bg-slate-50 border border-slate-100 rounded-[32px] p-6 h-full min-h-[140px]">
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mastered</p>
                          <div className="flex flex-wrap gap-2">
                             {studentDetailedStats.teluguMastery.filter(s => s.passed).length > 0 ? (
                               studentDetailedStats.teluguMastery.filter(s => s.passed).map(stg => (
                                 <span key={stg.id} className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase">{stg.id.split('-')[1]}</span>
                               ))
                             ) : (
-                              <span className="text-[10px] font-bold text-slate-300 italic">No stages mastered yet</span>
+                              <span className="text-[10px] font-bold text-slate-300 italic">None yet</span>
                             )}
                          </div>
                       </div>
                    </section>
                 </div>
 
-                {/* Recent Activity */}
                 <section className="space-y-6">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Execution History</h4>
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recent Sprints</h4>
                    <div className="space-y-4">
                       {studentDetailedStats.results.slice(0, 5).map(r => (
                         <div key={r.id} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-3xl hover:shadow-lg transition-all">
@@ -477,7 +475,6 @@ export default function TeacherDashboard() {
                            </div>
                            <div className="text-right">
                               <p className={`text-xl font-black ${r.scorePercentage >= 90 ? 'text-emerald-600' : 'text-rose-600'}`}>{r.scorePercentage}%</p>
-                              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">ACCURACY</span>
                            </div>
                         </div>
                       ))}
@@ -485,12 +482,12 @@ export default function TeacherDashboard() {
                 </section>
              </div>
 
-             <footer className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+             <footer className="p-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
-                   <Award className="text-amber-500" />
-                   <p className="text-xs font-bold text-slate-500">Mastery predicted based on latest 20 sprints.</p>
+                   <Award className="text-amber-500 w-5 h-5" />
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Academic Snapshot</p>
                 </div>
-                <button onClick={() => setSelectedStudent(null)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600">Close Profile</button>
+                <button onClick={() => setSelectedStudent(null)} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors">Dismiss</button>
              </footer>
            </div>
         </div>

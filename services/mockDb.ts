@@ -50,7 +50,7 @@ export const normalizeUser = (u: any): User => {
     school: u.school || u.school_branch || '',
     assignedTeacherId: u.assignedTeacherId || u.assigned_teacher_id || '',
     teacherNotes: u.teacherNotes || u.teacher_notes || '',
-    avatarUrl: u.avatarUrl || u.avatar_url || ''
+    avatarUrl: u.avatarUrl || u.avatar_url || u.avatarUrl || '' // Triple check for avatar mapping
   };
 };
 
@@ -83,10 +83,20 @@ export const mockDb = {
   saveUser: async (user: User) => {
     const cleanUser = normalizeUser(user);
     
+    // 1. Update local registry
     let users = mockDb.getUsers();
     users = users.filter(u => u.username !== cleanUser.username && u.id !== cleanUser.id);
     users.push(cleanUser);
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+
+    // 2. Sync to active user if it's the current user
+    const savedActive = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER);
+    if (savedActive) {
+      const activeUser = JSON.parse(savedActive);
+      if (activeUser.id === cleanUser.id) {
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_USER, JSON.stringify(cleanUser));
+      }
+    }
 
     if (isSupabaseConfigured) {
       try {
@@ -187,7 +197,7 @@ export const mockDb = {
       localQs = await db.getAllQuestions();
     }
 
-    // CRITICAL: If local DB is empty but we have Supabase, fetch and cache on the fly
+    // Direct cloud fetch if local is empty
     if (localQs.length === 0 && levelId && isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -417,7 +427,6 @@ export const mockDb = {
   },
 
   init: async () => {
-    // Basic init, don't block. Sub-pages will call specific syncs if needed.
     if (isSupabaseConfigured) {
       const allQs = await db.getAllQuestions();
       if (allQs.length === 0) {

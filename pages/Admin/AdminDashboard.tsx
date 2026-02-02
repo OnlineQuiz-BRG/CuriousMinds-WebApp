@@ -898,80 +898,75 @@ export default function AdminDashboard({ config: initialConfig }: { config: Syst
       </div>
 
       {editingUser && (
-        <div className="fixed inset-0 z-[200] flex justify-end animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditingUser(null)} />
-          <div className="relative w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 overflow-hidden">
-            <header className="p-8 border-b border-slate-100 flex items-center justify-between">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setEditingUser(null)} />
+          <div className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl flex flex-col animate-in zoom-in-95 duration-500 overflow-hidden max-h-[95vh]">
+            <header className="p-8 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
                   {isAddingUser ? <UserPlus className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
                 </div>
                 <h3 className="text-2xl font-black text-slate-800 tracking-tight uppercase">
                   {isAddingUser ? 'Create New Profile' : 'Modify User Permissions'}
                 </h3>
               </div>
-              <button onClick={() => setEditingUser(null)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-full">
+              <button onClick={() => setEditingUser(null)} className="p-3 text-slate-400 hover:bg-slate-50 rounded-full transition-all">
                 <X className="w-6 h-6" />
               </button>
             </header>
 
-            <form onSubmit={handleSaveUser} className="flex-1 overflow-y-auto p-10 space-y-10">
+            <form onSubmit={handleSaveUser} className="flex-1 overflow-y-auto p-10 space-y-12">
               <section className="space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Core Profile</h4>
-                  {duplicateUsernames.has(editingUser.username.toUpperCase()) && (
-                    <span className="text-[10px] font-black text-rose-500 uppercase flex items-center gap-1 animate-pulse">
-                      <AlertOctagon className="w-3 h-3" /> Duplicate ID Conflict
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 col-span-2">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-50 pb-2">Core Profile</h4>
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Full Name</label>
                     <input 
                       type="text"
                       required
-                      placeholder="e.g. Raghavendra Bhashyam"
+                      placeholder="e.g. Sree"
                       value={editingUser.fullName}
                       onChange={(e) => setEditingUser({...editingUser, fullName: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500"
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:border-indigo-500 focus:bg-white outline-none transition-all shadow-inner"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Access ID (Username)</label>
-                    <input 
-                      type="text"
-                      required
-                      placeholder="e.g. CMD002"
-                      value={editingUser.username}
-                      onChange={(e) => setEditingUser({...editingUser, username: e.target.value.toUpperCase()})}
-                      className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-indigo-500 uppercase ${duplicateUsernames.has(editingUser.username.toUpperCase()) ? 'border-rose-300 text-rose-700' : 'border-slate-200 text-slate-700'}`}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Login Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Access ID (Username)</label>
                       <input 
-                        type="password"
-                        placeholder="••••••••"
-                        required={isAddingUser}
-                        value={userPassword}
-                        onChange={(e) => setUserPassword(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500"
+                        type="text"
+                        required
+                        placeholder="e.G. CMD002"
+                        value={editingUser.username}
+                        onChange={(e) => setEditingUser({...editingUser, username: e.target.value.toUpperCase()})}
+                        className={`w-full px-6 py-4 bg-slate-50 border rounded-2xl font-bold outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner uppercase ${duplicateUsernames.has(editingUser.username.toUpperCase()) ? 'border-rose-300 text-rose-700' : 'border-slate-200 text-slate-800'}`}
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Login Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
+                        <input 
+                          type="password"
+                          placeholder="••••••••"
+                          required={isAddingUser}
+                          value={userPassword}
+                          onChange={(e) => setUserPassword(e.target.value)}
+                          className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:border-indigo-500 focus:bg-white outline-none transition-all shadow-inner"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Role Assignment</label>
-                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
                      {[UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT, UserRole.ADMIN].map(role => (
                        <button
                          key={role}
                          type="button"
                          onClick={() => setEditingUser({...editingUser, role})}
-                         className={`py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${editingUser.role === role ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'}`}
+                         className={`py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${editingUser.role === role ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-500'}`}
                        >
                          {role}
                        </button>
@@ -980,12 +975,9 @@ export default function AdminDashboard({ config: initialConfig }: { config: Syst
                 </div>
               </section>
 
-              {/* Assignment Controls */}
               <section className="space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Classroom Assignment</h4>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-50 pb-2">Classroom Assignment</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase ml-1 flex items-center gap-2"><School size={10} /> Institute/School</label>
                     <input 
@@ -993,7 +985,7 @@ export default function AdminDashboard({ config: initialConfig }: { config: Syst
                       placeholder="e.g. CM Institute"
                       value={editingUser.institute || ''}
                       onChange={(e) => setEditingUser({...editingUser, institute: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500"
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:border-indigo-500 focus:bg-white transition-all outline-none shadow-inner"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1001,7 +993,7 @@ export default function AdminDashboard({ config: initialConfig }: { config: Syst
                     <select 
                       value={editingUser.assignedTeacherId || ''}
                       onChange={(e) => setEditingUser({...editingUser, assignedTeacherId: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500"
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:border-indigo-500 focus:bg-white transition-all outline-none shadow-inner"
                     >
                       <option value="">None / Manual</option>
                       {teachers.map(t => (
@@ -1014,82 +1006,62 @@ export default function AdminDashboard({ config: initialConfig }: { config: Syst
 
               <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Module Entitlements</h4>
-                   <span className="text-[9px] font-bold text-slate-300 italic">Toggle Subscription Access</span>
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Module Entitlements</h4>
+                   <span className="text-[9px] font-bold text-slate-300 italic uppercase tracking-widest">Toggle Subscription Access</span>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { id: 'math', label: 'Mental Mathematics', icon: Calculator, desc: '6 levels of proficiency' },
-                    { id: 'telugu', label: 'Telugu Dictation', icon: AlphabetIcon, desc: '18 structural stages' },
-                    { id: 'prompt', label: 'Prompt Engineering', icon: Zap, desc: 'High school curriculum' }
+                    { id: 'math', label: 'Mental Mathematics', icon: Calculator },
+                    { id: 'telugu', label: 'Telugu Dictation', icon: AlphabetIcon },
+                    { id: 'prompt', label: 'Prompt Engineering', icon: Zap }
                   ].map(mod => (
                     <div 
                       key={mod.id} 
                       onClick={() => toggleModuleAccess(mod.id)}
-                      className={`flex items-center justify-between p-5 rounded-3xl border-2 cursor-pointer transition-all ${editingUser.allowedModules?.includes(mod.id) ? 'bg-indigo-50/50 border-indigo-200 shadow-sm' : 'bg-white border-slate-100 opacity-60'}`}
+                      className={`flex items-center justify-between p-5 rounded-3xl border-2 cursor-pointer transition-all ${editingUser.allowedModules?.includes(mod.id) ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-100 grayscale opacity-60'}`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${editingUser.allowedModules?.includes(mod.id) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                          <mod.icon className="w-5 h-5" />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${editingUser.allowedModules?.includes(mod.id) ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                          <mod.icon size={18} />
                         </div>
-                        <div>
-                           <p className="font-black text-slate-800 uppercase text-xs tracking-tight leading-none">{mod.label}</p>
-                           <p className="text-[10px] font-bold text-slate-400 mt-1">{mod.desc}</p>
-                        </div>
+                        <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest leading-none">{mod.label}</p>
                       </div>
                       <div className={`transition-colors ${editingUser.allowedModules?.includes(mod.id) ? 'text-indigo-600' : 'text-slate-300'}`}>
-                         {editingUser.allowedModules?.includes(mod.id) ? <ToggleRight className="w-10 h-10" /> : <ToggleLeft className="w-10 h-10" />}
+                         {editingUser.allowedModules?.includes(mod.id) ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <section className="space-y-6">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">Account Status</h4>
-                <div className="flex items-center justify-between p-6 bg-slate-50 rounded-[32px] border border-slate-100">
-                   <div>
-                      <p className="font-black text-slate-800 text-xs">Login Authorization</p>
-                      <p className="text-[10px] font-bold text-slate-500">Enable or disable platform access.</p>
-                   </div>
-                   <button
-                     type="button"
-                     onClick={() => setEditingUser({...editingUser, active: !editingUser.active})}
-                     className={`px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest transition-all ${editingUser.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}
-                   >
-                     {editingUser.active ? 'Active' : 'Disabled'}
-                   </button>
-                </div>
-              </section>
-
               {!isAddingUser && (
-                <section className="pt-10">
+                <section className="pt-6">
                    <button 
                      type="button"
                      onClick={() => handleDeleteUser()}
-                     className="w-full py-5 bg-rose-50 text-rose-600 border border-rose-100 rounded-[30px] font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 hover:bg-rose-100 transition-all"
+                     className="w-full py-5 bg-rose-50 text-rose-600 border border-rose-100 rounded-[24px] font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 hover:bg-rose-100 transition-all"
                    >
-                      <UserMinus className="w-5 h-5" /> Delete Account Permanently
+                      <UserMinus className="w-5 h-5" /> Delete Account
                    </button>
                 </section>
               )}
             </form>
 
-            <footer className="p-8 border-t border-slate-100 bg-slate-50 flex items-center gap-4">
+            <footer className="p-8 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center gap-4 relative z-10">
               <button 
                 type="button"
                 onClick={() => setEditingUser(null)}
-                className="flex-1 py-4 bg-white border border-slate-200 text-slate-500 font-black rounded-2xl hover:bg-slate-50 transition-all uppercase text-xs tracking-widest"
+                className="w-full sm:w-1/3 py-5 bg-white border border-slate-200 text-slate-500 font-black rounded-2xl hover:bg-slate-50 transition-all uppercase text-xs tracking-widest"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSaveUser}
                 disabled={isSyncing}
-                className="flex-[2] py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2"
+                className="w-full sm:w-2/3 py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {isAddingUser ? 'Create User Profile' : 'Save Changes'}
+                {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} {isAddingUser ? 'Create User Profile' : 'Archive Changes'}
               </button>
             </footer>
           </div>

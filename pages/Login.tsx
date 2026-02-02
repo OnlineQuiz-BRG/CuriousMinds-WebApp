@@ -66,7 +66,7 @@ export default function Login({ config }: { config: SystemConfig }) {
       if (view === 'login') {
         // --- 1. EMERGENCY FALLBACK (HIGHEST PRIORITY) ---
         // This allows access even if cloud is broken or not yet configured
-        if (lookupCode === 'ADMIN' && password === 'admin') {
+        if (lookupCode === 'ADMIN' && password === 'admin@123') {
           handleLoginSuccess({
             id: 'dev-admin',
             username: 'ADMIN',
@@ -131,7 +131,7 @@ export default function Login({ config }: { config: SystemConfig }) {
         } else {
           throw new Error(isSupabaseConfigured 
             ? "Invalid credentials. Please verify your password." 
-            : "User not found. For first-time setup, use ADMIN / admin.");
+            : "User not found. For first-time setup, use ADMIN / admin@123.");
         }
       } else if (view === 'signup') {
         if (!fullName.trim()) throw new Error('Full Name is required.');
@@ -207,7 +207,7 @@ export default function Login({ config }: { config: SystemConfig }) {
           <div className="mb-8 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3 text-left">
             <div className="text-[10px] font-bold text-amber-800 leading-relaxed uppercase tracking-wider">
               Local Mode: Cloud Sync is disabled.<br/>
-              Use <strong>ADMIN / admin</strong> to begin.
+              Use <strong>ADMIN / admin@123</strong> to begin.
             </div>
           </div>
         )}

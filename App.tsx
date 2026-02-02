@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -162,7 +162,6 @@ const Sidebar = ({ isOpen, onClose, config }: { isOpen: boolean; onClose: () => 
           ))}
         </nav>
 
-        {/* WhatsApp & Community Section */}
         <div className="mt-8 pt-8 border-t border-white/10">
           <p className="px-3 text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Connect</p>
           <div className="space-y-1.5">
@@ -258,14 +257,16 @@ const Header = ({ onToggleSidebar, config }: { onToggleSidebar: () => void, conf
 const ProtectedLayout = ({ children, config }: { children?: React.ReactNode, config: SystemConfig }) => {
   const { user, loading, refreshUser } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const location = useLocation();
+  const lastUserId = useRef<string | null>(null);
 
+  // Identity verification only on mount or user change
   useEffect(() => {
-    if (user) {
-      mockDb.syncFromSupabase(true).catch(err => console.error("Sync failed:", err));
+    if (user && user.id !== lastUserId.current) {
+      mockDb.syncFromSupabase(false).catch(err => console.error("Background sync failed:", err));
       refreshUser();
+      lastUserId.current = user.id;
     }
-  }, [user?.id, location.pathname]);
+  }, [user?.id, refreshUser]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -316,13 +317,17 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (remoteUserRaw) {
           const remoteUser = normalizeUser(remoteUserRaw);
+          
+          // SMART MERGE: Keep local data if cloud is empty (especially for avatarUrl)
           const mergedAllowedModules = (Array.isArray(remoteUser.allowedModules) && remoteUser.allowedModules.length > 0)
             ? remoteUser.allowedModules 
             : (Array.isArray(localUser.allowedModules) && localUser.allowedModules.length > 0 ? localUser.allowedModules : []);
 
           const updatedUser = { 
             ...localUser, 
-            ...remoteUser, 
+            ...remoteUser,
+            // DO NOT OVERWRITE if local has avatar but remote doesn't yet
+            avatarUrl: (remoteUser.avatarUrl && remoteUser.avatarUrl.length > 10) ? remoteUser.avatarUrl : (localUser.avatarUrl || ''),
             allowedModules: mergedAllowedModules 
           };
           
